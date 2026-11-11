@@ -8,7 +8,7 @@ Mix colors with the Mixbox algorithm for realistic paint-like blending!
 
 1. Put the `mixbox-color-picker.desktop` file and the `mixbox-color-picker` folder in the `pykrita` folder. See the [official guide](https://docs.krita.org/en/user_manual/python_scripting/install_custom_python_plugin.html).
 2. Enable the plugin in `Settings > Configure Krita > Python Plugin Manager` and restart Krita.
-3. Open the docker from `Settings > Docker > Mixbox Color Picker`.
+3. Open the docker from `Settings > Dockers > Mixbox Color Picker`.
 
 ## Usage
 
