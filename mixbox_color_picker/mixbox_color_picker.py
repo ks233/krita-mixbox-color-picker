@@ -3,29 +3,24 @@ from PyQt5.QtWidgets import *
 
 from . import mixbox
 
+
 def pick_color(color_tuple):
     v = Krita.instance().activeWindow().activeView()
     if v is not None:
         v.setForeGroundColor(ManagedColor.fromQColor(QColor(*color_tuple), v.canvas()))
 
+
 # Krita 和 PyQt 有很多小驼峰，但 python 一般用 snake_case
 # 纠结。。。总之能用 snake case 的还是用 snake case 吧
 def get_foreground_color_tuple():
     v = Krita.instance().activeWindow().activeView()
-    col = v.foregroundColor().colorForCanvas(v.canvas())
-    return (col.red(), col.green(), col.blue())
+    if v is not None:
+        col = v.foregroundColor().colorForCanvas(v.canvas())
+        return (col.red(), col.green(), col.blue())
+    return (255, 0, 255)
 
 
 class MyDocker(DockWidget):
-
-    def set_color1(self):
-        self.gradient_slider.color1 = get_foreground_color_tuple()
-        self.gradient_slider.update()
-
-    def set_color2(self):
-        self.gradient_slider.color2 = get_foreground_color_tuple()
-        self.gradient_slider.update()
-
     def __init__(self):
         super().__init__()
 
@@ -40,9 +35,9 @@ class MyDocker(DockWidget):
         button_group.setLayout(QHBoxLayout())
 
         button_set_color1 = QPushButton("Set Color 1", button_group)
-        button_set_color1.clicked.connect(self.set_color1)
+        button_set_color1.clicked.connect(self.gradient_slider.set_color1)
         button_set_color2 = QPushButton("Set Color 2", button_group)
-        button_set_color2.clicked.connect(self.set_color2)
+        button_set_color2.clicked.connect(self.gradient_slider.set_color2)
 
         button_group.layout().addWidget(button_set_color1)
         button_group.layout().addWidget(button_set_color2)
@@ -55,10 +50,12 @@ class MyDocker(DockWidget):
     def canvasChanged(self, canvas):
         pass
 
+
 # 注册自定义窗口 MyDocker，必须写在 class 声明之后
 Krita.instance().addDockWidgetFactory(
     DockWidgetFactory("mixbox_color_picker", DockWidgetFactoryBase.DockRight, MyDocker)
 )
+
 
 class GradientSlider(QWidget):
 
@@ -67,6 +64,24 @@ class GradientSlider(QWidget):
         self.t = 0
         self.color1 = (255, 255, 0)
         self.color2 = (0, 0, 255)
+        self.update_cached_colors()
+
+    def set_color1(self):
+        self.color1 = get_foreground_color_tuple()
+        self.update_cached_colors()
+        self.update()
+
+    def set_color2(self):
+        self.color2 = get_foreground_color_tuple()
+        self.update_cached_colors()
+        self.update()
+
+    # 缓存颜色值，避免重绘时重复调用 mixbox.lerp
+    def update_cached_colors(self):
+        self.cached_colors = [mixbox.lerp(self.color1, self.color2, i / 255.0) for i in range(256)]
+
+    def get_color_from_cache(self, t):
+        return self.cached_colors[round(t * 255)]
 
     def sizeHint(self):
         return QtCore.QSize(5000, 5000)
@@ -101,7 +116,7 @@ class GradientSlider(QWidget):
         # 左闭右开啊别忘了
         for x in range(ww + 1):
             t = float(x) / float(ww)
-            color_tuple = mixbox.lerp(self.color1, self.color2, t)
+            color_tuple = self.get_color_from_cache(t)
             # 反色渲染当前指针位置
             if abs(self.t - t) <= 1.5 / ww:
                 r, g, b = color_tuple
