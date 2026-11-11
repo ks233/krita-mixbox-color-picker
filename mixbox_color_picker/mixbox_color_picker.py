@@ -110,4 +110,4 @@ class GradientSlider(QWidget):
             if abs(self.t - t) <= 0.5 / ww:
                 color_tuple = (255, 255, 255)
             painter.setBrush(QBrush(QColor(*color_tuple)))
-            painter.drawRect(int(x), int(0), int(x), int(hh))
+            painter.drawRect(int(x), 0, 1, int(hh))
